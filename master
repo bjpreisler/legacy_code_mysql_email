@@ -1,0 +1,233 @@
+"""
+    This python script connects to db, queries,
+    and sends a summary email to the list of recipients
+""" 
+"""
+    Define variable for current date and import lib, needed before custom params
+"""
+import time
+import datetime
+day = time.strftime("%m/%d/%Y")
+current = datetime.datetime.now()
+mnth = current.strftime('%B')
+
+#########################
+### CUSTOM PARAMETERS ###
+from_email = ''
+cc = ['']
+to_email = ''
+to_emails = [to_email] + cc
+subject = ''
+text = ''
+file_name = 'DM' + mnth + '.xlsx'
+files = [file_name]
+#########################
+
+"""
+    Import all required libraries
+"""
+import MySQLdb
+import xlsxwriter
+import smtplib
+import os
+import mimetypes
+from email.mime.multipart import MIMEMultipart
+from email import Encoders
+from email.message import Message
+from email.mime.audio import MIMEAudio
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.text import MIMEText
+from email.Utils import formatdate
+from dateutil.relativedelta import relativedelta
+
+
+"""
+    Create database connection (204.132.96.66?)
+"""
+db=MySQLdb.connect( host="acts247.focus.org",
+                    user="python",
+                    passwd="5ksyBpZyrGGYWGnpZE5q3y7aCb4rVE",
+                    db="acts247")
+ 
+"""
+    Create cursor which will allow use to execute a query
+"""
+c=db.cursor()
+c2=db.cursor()
+
+"""
+    Actual SQL queries to run
+"""
+c.execute(""" """)
+
+c2.execute(""" """)
+
+"""
+    Fetch entire row from cursor and store into result object
+"""
+result = c.fetchall()
+result2 = c2.fetchall()
+
+"""
+    Close database connection
+"""
+db.close()
+
+"""
+    Create a new Excel workbook called variable file_name
+"""
+workbook = xlsxwriter.Workbook(file_name)
+
+"""
+    Add a new worksheet to the workbook
+"""
+worksheet = workbook.add_worksheet()
+
+"""
+    Create for loop to establish months to be used in below xlsx formating
+"""
+now = datetime.datetime.now()
+month = []
+
+for i in range(6,0,-1):
+    current_month = now + relativedelta(months=-i)
+    month.append(current_month.strftime('%B'))
+month.append(now.strftime('%B'))
+
+"""
+    Formating results into worksheet and other inputs
+"""
+format = workbook.add_format()
+format.set_bg_color('#ADD8E6')
+format.set_align('center')
+format.set_font_size(16)
+format_sub = workbook.add_format()
+format_sub.set_align('center')
+format_sub.set_font_size(14)
+
+worksheet.set_column(0, 10, 15)
+
+worksheet.merge_range('A1:J1','Disciple Makers (DM) from June-Month', format)
+worksheet.write_string('A2', 'August', format_sub)
+worksheet.write_string('B2', 'September', format_sub)
+worksheet.write_string('C2', 'October', format_sub)
+worksheet.write_string('D2', 'November', format_sub)
+worksheet.write_string('E2', 'December', format_sub)
+worksheet.write_string('F2', 'January', format_sub)
+worksheet.write_string('G2', 'February', format_sub)
+worksheet.write_string('H2', 'March', format_sub)
+worksheet.write_string('I2', 'April', format_sub)
+worksheet.write_string('J2', 'May', format_sub)
+
+worksheet.write_row('A3', result[0], format_sub)
+worksheet.write_string('A4', '*', format_sub)
+
+format2 = workbook.add_format()
+format2.set_bg_color('#BCED91')
+format2.set_align('center')
+format2.set_font_size(16)
+format2_sub = workbook.add_format()
+format2_sub.set_align('center')
+format2_sub.set_font_size(14)
+
+worksheet.merge_range('A10:J10','Spiritual Multipliers (SM) from June-Month', format2)
+worksheet.write_string('A11', 'August', format2_sub)
+worksheet.write_string('B11', 'September',format2_sub)
+worksheet.write_string('C11', 'October', format2_sub)
+worksheet.write_string('D11', 'November', format2_sub)
+worksheet.write_string('E11', 'December', format2_sub)
+worksheet.write_string('F11', 'January', format2_sub)
+worksheet.write_string('G11', 'February', format2_sub)
+worksheet.write_string('H11', 'March', format2_sub)
+worksheet.write_string('I11', 'April', format2_sub)
+worksheet.write_string('J11', 'May', format2_sub)
+
+worksheet.write_row('A12', result2[0], format2_sub)
+worksheet.write_string('A13', '*includes both staff and students', format2_sub)
+
+"""
+    Close workbook so it does not get corrupted
+"""
+workbook.close()
+
+"""
+    Open passwords file which holds the QGI sendgrid password
+"""
+file = open("C:\\Users\\brian.preisler\\Desktop\\pythontxtfile.txt", "r")
+
+"""
+    Extract contents of file
+"""
+Mypassword = file.read()
+
+"""
+    Close the password file to prevent corruption and locking
+"""
+file.close()
+
+"""
+    Function to send email
+"""
+def send_mail(send_from, send_to, subject, text, files=None,
+                          data_attachments=None, images=None):
+ 
+    """
+        Email sending parameters
+    """
+    server = 'smtp.office365.com'
+    port = 587
+    tls = True
+    username = ''
+    password = Mypassword
+    
+    COMMASPACE = ', '
+    
+    if files is None:
+        files = []
+ 
+    if images is None:
+        images = []
+ 
+    if data_attachments is None:
+        data_attachments = []
+ 
+    msg = MIMEMultipart('related')
+    msg['From'] = send_from
+    msg['To'] = send_to if isinstance(send_to, basestring) else COMMASPACE.join(send_to)
+    msg['Date'] = formatdate(localtime=True)
+    msg['Subject'] = subject
+ 
+    msg.attach( MIMEText(text, 'html') )
+ 
+    for f in files:
+        part = MIMEBase('application', "octet-stream")
+        part.set_payload( open(f,"rb").read() )
+        Encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(f))
+        msg.attach(part)
+ 
+    for f in data_attachments:
+        part = MIMEBase('application', "octet-stream")
+        part.set_payload( f['data'] )
+        Encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename="%s"' % f['filename'])
+        msg.attach(part)
+ 
+    for (n, i) in enumerate(images):
+        fp = open(i, 'rb')
+        msgImage = MIMEImage(fp.read())
+        fp.close()
+        msgImage.add_header('Content-ID', '<image{0}>'.format(str(n+1)))
+        msg.attach(msgImage)
+ 
+    smtp = smtplib.SMTP(server, int(port))
+    if tls:
+        smtp.starttls()
+ 
+    smtp.login(username, password)
+    smtp.sendmail(send_from, send_to, msg.as_string())
+    smtp.close()
+ 
+
+send_mail(from_email,to_emails, subject, text, files)

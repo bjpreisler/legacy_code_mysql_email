@@ -47,7 +47,7 @@ from dateutil.relativedelta import relativedelta
 """
 db=MySQLdb.connect( host="acts247.focus.org",
                     user="python",
-                    passwd="5ksyBpZyrGGYWGnpZE5q3y7aCb4rVE",
+                    passwd="",
                     db="acts247")
  
 """
